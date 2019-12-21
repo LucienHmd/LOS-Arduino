@@ -5,43 +5,78 @@
  * Author : Luke Lukeson
  */ 
 
+#define F_CPU 16000000L // Specify oscillator frequency
 
 #include <stdlib.h>
+#include <avr/io.h>
 #include <avr/interrupt.h>
-#define F_CPU 16000000L // Specify oscillator frequency
 #include <stdio.h>
 #include <util/delay.h>
 
 
-#define DDRB = 0b10000000; // configure pin 7 of PORTB as output (digital pin 13 on the Arduino Mega2560)
-volatile unsigned long ticks = 0;
-volatile unsigned long x = 0;
-
-
-ISR(TIMER4_OVF_vect, ISR_BLOCK)
+void initInterrupts()
 {
-	ticks++;
-	
-	
+	cli();
+	TCCR4B |= (1 << CS40); // Sets timer 4 clock to on
+	TIMSK4 |=  (1 << TOIE4); // Enable Timer 4 Interrupts
+	DDRB |= (1 << PORTB7); // PORTB7 direction = out
+	sei();
 }
 
-unsigned long OSticks()
+void pushRegisters()
 {
-	return ticks;
+	// Pushes all 32 multi purpose registers into memory
 }
 
+void pullRegisters()
+{
+	// Pulls all 32 multi purpose registers from memory and puts them back into the correct registers
+}
+
+void createTask()
+{
+	// Creates task to be called by scheduler
+}
+
+void scheduleTask()
+{
+	// Selects which task runs next using a queue
+}
+
+void runTask()
+{
+	// Puts task into CPU
+}
+
+void swapTasks()
+{
+	// Switch tasks when an interrupt is called
+}
+
+void defaultTask()
+{
+	PORTB = 0b10000000; // set 7th bit to LOW
+	_delay_ms(10000);
+	PORTB = 0b00000000; // set 7th bit to HIGH
+	_delay_ms(10000);
+	
+}
 
 void runOS()
 {
-	printf("w");
-	x = OSticks();
-	if (x > 10000) {
-		cli();
-		PORTB = 0b10000000; // set 7th bit to HIGH
-		_delay_ms(1000);
-		PORTB = 0b00000000; // set 7th bit to LOW
-		_delay_ms(1000);
-		x = 0;
-		sei();
-	}
+	cli();
+	defaultTask();
+	sei();
+	TCCR4B |= (1 << CS40); // Sets timer 4 clock to on
+
+}
+
+ISR(TIMER4_OVF_vect, ISR_BLOCK)
+{
+	TCCR4B &= ~(1 << CS40); // Sets timer 4 clock to off
+	PORTB |= (1 << PORTB7); // set 7th bit to HIGH
+	_delay_ms(2000);
+	PORTB &= ~(1 << PORTB7); // set 7th bit to LOW
+	_delay_ms(2000);
+	
 }

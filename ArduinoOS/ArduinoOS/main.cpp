@@ -3,25 +3,23 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include <avr/interrupt.h>
+#include "kernel.cpp"
 
 #define F_CPU 16000000L // Specify oscillator frequency
 
-
-int x = 0;
 
 
 
 int main(void)
 {
-	
-	sei();
-	TCCR4B |= (1 << CS40); // Sets timer 4 clock
-	TIMSK4 |=  (1 << TOIE4); // Enable Timer 4 Interrupts
-	DDRB |= (1 << PORTB7); // PORTB7 direction = out
-	
+	initInterrupts();
+	PORTB = 0b10000000;
 	
 	while (1)
 	{
+		
+		runOS();
+		
 		/*
 		// 1 pulse
 		PORTB |= (1 << PORTB7); // PORTB7 hi = LED L on
@@ -41,12 +39,3 @@ int main(void)
 	
 }
 
-ISR(TIMER4_OVF_vect, ISR_BLOCK)
-{
-	x = 1;
-	PORTB |= (1 << PORTB7); // set 7th bit to HIGH
-	_delay_ms(10000);
-	PORTB &= ~(1 << PORTB7); // set 7th bit to LOW
-	_delay_ms(10000);
-	
-}
