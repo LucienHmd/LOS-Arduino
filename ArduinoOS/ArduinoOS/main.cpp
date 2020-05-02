@@ -4,21 +4,43 @@
 #include <util/delay.h>
 #include <avr/interrupt.h>
 #include "kernel.cpp"
+#include "SerialPort.cpp"
 
 #define F_CPU 16000000L // Specify oscillator frequency
 
 
+void task1(){
 
+	PORTB &= ~(1 << PORTB7); // PORTB7 hi = LED L off
+		
+}
+
+void task2(){
+	
+	PORTB &= ~(1 << PORTB7); // PORTB7 hi = LED L off
+	
+}
 
 int main(void)
 {
 	initInterrupts();
+	initLED();
 	PORTB = 0b10000000;
 	
-	while (1)
-	{
+	
+	createTask(1, task1);
+	
+	
+	
+	while(true){
+		//runTask();'
+		SendData();
+	}
+	
+	
 		
-		runOS();
+		
+		//runOS();
 		
 		/*
 		// 1 pulse
@@ -35,7 +57,7 @@ int main(void)
 			_delay_ms(10000);
 		}
 		*/
-	}
+	
 	
 }
 

@@ -5,7 +5,7 @@
  * Author : Luke Lukeson
  */ 
 
-#define F_CPU 16000000L // Specify oscillator frequency
+//#define F_CPU 16000000L // Specify oscillator frequency
 
 #include <stdlib.h>
 #include <avr/io.h>
@@ -14,14 +14,27 @@
 #include <util/delay.h>
 
 
+const int MAX_PROGRAMS = 2;
+void (*prgms[MAX_PROGRAMS])( void );
+bool freeSlotPointer = 0;
+
+int interuptCounter = 0;
+
+void initLED()
+{
+	cli();
+	DDRB |= (1 << PORTB7); // PORTB7 direction = out
+	sei();
+}
+
 void initInterrupts()
 {
 	cli();
 	TCCR4B |= (1 << CS40); // Sets timer 4 clock to on
 	TIMSK4 |=  (1 << TOIE4); // Enable Timer 4 Interrupts
-	DDRB |= (1 << PORTB7); // PORTB7 direction = out
 	sei();
 }
+	
 
 void pushRegisters()
 {
@@ -33,10 +46,21 @@ void pullRegisters()
 	// Pulls all 32 multi purpose registers from memory and puts them back into the correct registers
 }
 
-void createTask()
+void createTask(bool loop, void (*task)())
 {
 	// Creates task to be called by scheduler
-}
+	
+		if (freeSlotPointer == 0) {
+			prgms[freeSlotPointer] = task;
+			freeSlotPointer = 1;
+		} else if (freeSlotPointer == 1) {
+			prgms[freeSlotPointer] = task;
+			freeSlotPointer = 0;
+		} 
+		
+		
+	
+	}
 
 void scheduleTask()
 {
@@ -46,11 +70,13 @@ void scheduleTask()
 void runTask()
 {
 	// Puts task into CPU
+	(*prgms[0])();
+	
 }
 
 void swapTasks()
 {
-	// Switch tasks when an interrupt is called
+	// Switch tasks when an interrupt is called using a queue
 }
 
 void defaultTask()
@@ -64,19 +90,34 @@ void defaultTask()
 
 void runOS()
 {
+	/*
+	runOS() should be called in the main file after createTask() was run and it should call functions scheduleTask() and runTask() to begin the tasks
+	
+	*/
 	cli();
-	defaultTask();
+	runTask();
 	sei();
-	TCCR4B |= (1 << CS40); // Sets timer 4 clock to on
+	
 
 }
 
 ISR(TIMER4_OVF_vect, ISR_BLOCK)
 {
-	TCCR4B &= ~(1 << CS40); // Sets timer 4 clock to off
-	PORTB |= (1 << PORTB7); // set 7th bit to HIGH
-	_delay_ms(2000);
-	PORTB &= ~(1 << PORTB7); // set 7th bit to LOW
-	_delay_ms(2000);
+	// This interrupt should call swapTask() 
+	//TCCR4B &= ~(1 << CS40); // Sets timer 4 clock to off
+	if (interuptCounter == 10) {
+		interuptCounter = 0;
+		TCCR4B &= ~(1 << CS40); // Sets timer 4 clock to off
+		PORTB |= (1 << PORTB7);
+		_delay_ms(2000);
+		TCCR4B |= (1 << CS40); // Sets timer 4 clock to on
+	} else {
+		interuptCounter++;
+	}
+
+	// PORTB |= (1 << PORTB7); // set 7th bit to HIGH
+	//_delay_ms(2000);
+	//PORTB &= ~(1 << PORTB7); // set 7th bit to LOW
+	//_delay_ms(5000);
 	
 }
